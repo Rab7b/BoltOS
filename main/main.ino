@@ -15,6 +15,25 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 CPU myCpu;
 Kernel osKernel(myCpu);
 
+void test(){
+  osKernel.addTask(new Task(1, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(2, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(3, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(4, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(5, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(6, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(7, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(8, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(9, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(10, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(11, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(12, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(13, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(14, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(15, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(16, TaskState::READY, sampleTask));
+}
+
 bool sampleTask() {
   static unsigned long randomDuration{ 0 };
   static unsigned long startTime{ 0 };
@@ -37,6 +56,8 @@ void setup() {
   Serial.begin(115200);
   randomSeed(analogRead(A0));
 
+  pinMode(2, INPUT_PULLUP);
+
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
     for (;;)
@@ -47,22 +68,7 @@ void setup() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  osKernel.addTask(new Task(1, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(2, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(3, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(4, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(5, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(6, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(7, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(8, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(9, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(10, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(11, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(12, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(13, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(14, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(15, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(16, TaskState::READY, sampleTask));
+  test();
 }
 
 void loop() {
@@ -107,6 +113,12 @@ void loop() {
     } else {
       display.print(F("[ EMPTY ]"));
     }
+  }
+
+  if (digitalRead(2) == LOW){
+    
+    test();
+
   }
 
   display.display();
