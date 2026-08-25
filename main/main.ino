@@ -16,9 +16,9 @@ CPU myCpu;
 Kernel osKernel(myCpu);
 
 bool sampleTask() {
-  static unsigned long randomDuration = 0;
-  static unsigned long startTime = 0;
-  static bool initialized = false;
+  static unsigned long randomDuration{ 0 };
+  static unsigned long startTime{ 0 };
+  static bool initialized{ false };
 
   if (!initialized) {
     randomDuration = random(1000, 3001);
@@ -47,15 +47,22 @@ void setup() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  osKernel.addTask(new Task(10, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(5, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(8, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(6, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(7, TaskState::READY, sampleTask));
-  osKernel.addTask(new Task(9, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(1, TaskState::READY, sampleTask));
   osKernel.addTask(new Task(2, TaskState::READY, sampleTask));
   osKernel.addTask(new Task(3, TaskState::READY, sampleTask));
   osKernel.addTask(new Task(4, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(5, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(6, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(7, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(8, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(9, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(10, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(11, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(12, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(13, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(14, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(15, TaskState::READY, sampleTask));
+  osKernel.addTask(new Task(16, TaskState::READY, sampleTask));
 }
 
 void loop() {
@@ -66,14 +73,14 @@ void loop() {
   display.setCursor(0, 0);
   display.print(F("====== BOLT OS ======"));
 
-  double memoryUsed = (static_cast<double>(CPU::getUsed()) / 1024.0) * 100.0;
+  double memoryUsed{ (static_cast<double>(CPU::getUsed()) / 1024.0) * 100.0 };
 
   display.setCursor(0, 10);
   display.print(F("RAM:"));
   display.print(memoryUsed);
   display.print(F("%"));
 
-  display.setCursor(75, 13);
+  display.setCursor(72, 13);
   display.print(F("Sleep: "));
   display.print(osKernel.getSleepCount());
 
