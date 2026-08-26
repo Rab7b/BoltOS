@@ -11,9 +11,11 @@ void Kernel::run() {
       if (isDone) {
         freeTask(i);
         i--;
+        sortTask();
       }
     }
   }
+  sortTask();
 }
 
 void Kernel::freeTask(uint8_t indexToFree) {
