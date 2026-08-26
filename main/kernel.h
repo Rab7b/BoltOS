@@ -15,6 +15,51 @@ private:
   CPU* core;
   uint8_t index;
 
+  void sortAllTasks() {
+
+    Task* allTasks[16];
+    uint8_t total = 0;
+
+    for (uint8_t i = 0; i < count; i++) {
+      if (tasks[i] != nullptr) allTasks[total++] = tasks[i];
+    }
+    for (uint8_t i = 0; i < sleepCount; i++) {
+      if (sleeping[i] != nullptr) allTasks[total++] = sleeping[i];
+    }
+
+    if (total <= 1) return;
+
+    for (uint8_t i = 0; i < total - 1; i++) {
+      for (uint8_t j = 0; j < total - i - 1; j++) {
+        if (allTasks[j]->getPriority() < allTasks[j + 1]->getPriority()) {
+          Task* temp = allTasks[j];
+          allTasks[j] = allTasks[j + 1];
+          allTasks[j + 1] = temp;
+        }
+      }
+    }
+
+    count = 0;
+    sleepCount = 0;
+    for (uint8_t i = 0; i < 4; i++) tasks[i] = nullptr;
+    for (uint8_t i = 0; i < 12; i++) sleeping[i] = nullptr;
+
+    for (uint8_t i = 0; i < total; i++) {
+      if (i < 4) {
+        tasks[count] = allTasks[i];
+        tasks[count]->state = TaskState::READY;
+        count++;
+      } else {
+        if (sleepCount < 12) {
+          sleeping[sleepCount] = allTasks[i];
+          sleeping[sleepCount]->state = TaskState::READY;
+          sleepCount++;
+        }
+      }
+    }
+    index = count;
+  }
+
 public:
   Kernel(CPU& cpuCore) {
     index = 0;
@@ -26,21 +71,17 @@ public:
   }
 
   void addTask(Task* t) {
-
     if (t == nullptr) return;
 
     if (count < 4) {
       tasks[count] = t;
-      tasks[count]->state = TaskState::READY;
       count++;
-      index = count;
-    } else {
-      if (sleepCount < 12) {
-        sleeping[sleepCount] = t;
-        sleeping[sleepCount]->state = TaskState::READY;
-        sleepCount++;
-      }
+    } else if (sleepCount < 12) {
+      sleeping[sleepCount] = t;
+      sleepCount++;
     }
+
+    sortAllTasks();
   }
 
   void reset() {
@@ -52,17 +93,7 @@ public:
   }
 
   void sortTask() {
-    if (count <= 1) return;
-    for (uint8_t i = 0; i < count - 1; i++) {
-      for (uint8_t j = 0; j < count - i - 1; j++) {
-        if (tasks[j]->getPriority() < tasks[j + 1]->getPriority()) {
-
-          Task* temp = tasks[j];
-          tasks[j] = tasks[j + 1];
-          tasks[j + 1] = temp;
-        }
-      }
-    }
+    sortAllTasks();
   }
 
   void run();
@@ -84,4 +115,4 @@ public:
   }
 };
 
-#endif  //kernel.h
+#endif  // kernel.h

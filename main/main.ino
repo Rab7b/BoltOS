@@ -116,9 +116,7 @@ void loop() {
   }
 
   if (digitalRead(2) == LOW){
-    
     test();
-
   }
 
   display.display();
