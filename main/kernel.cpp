@@ -2,16 +2,98 @@
 
 void Kernel::run() {
   sortTask();
+
   for (uint8_t i = 0; i < count; i++) {
     if (tasks[i] != nullptr && (tasks[i]->state == TaskState::READY || tasks[i]->state == TaskState::RUNNING)) {
+
       tasks[i]->state = TaskState::RUNNING;
 
-      bool isDone = tasks[i]->execute();
+      bool isDone1 = false;
+      bool isDone2 = false;
+      bool isDone3 = false;
+      bool isDone4 = false;
 
-      if (isDone) {
-        freeTask(i);
-        i--;
-        sortTask();
+      if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr && tasks[2] != nullptr && tasks[3] != nullptr) {
+
+        isDone1 = tasks[0]->execute();
+        isDone2 = tasks[1]->execute();
+        isDone3 = tasks[2]->execute();
+        isDone4 = tasks[3]->execute();
+
+        tasks[0]->state = TaskState::RUNNING;
+        tasks[1]->state = TaskState::RUNNING;
+        tasks[2]->state = TaskState::RUNNING;
+        tasks[3]->state = TaskState::RUNNING;
+
+        if (isDone1) {
+          freeTask(0);
+          sortTask();
+        }
+        if (isDone2) {
+          freeTask(1);
+          sortTask();
+        }
+        if (isDone3) {
+          freeTask(2);
+          sortTask();
+        }
+        if (isDone4) {
+          freeTask(3);
+          sortTask();
+        }
+      } else if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr && tasks[2] != nullptr) {
+        isDone1 = tasks[0]->execute();
+        isDone2 = tasks[1]->execute();
+        isDone3 = tasks[2]->execute();
+
+        tasks[0]->state = TaskState::RUNNING;
+        tasks[1]->state = TaskState::RUNNING;
+        tasks[2]->state = TaskState::RUNNING;
+
+        if (isDone1) {
+          freeTask(0);
+          sortTask();
+        }
+        if (isDone2) {
+          freeTask(1);
+          sortTask();
+        }
+        if (isDone3) {
+          freeTask(2);
+          sortTask();
+        }
+      } else if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr) {
+        isDone1 = tasks[0]->execute();
+        isDone2 = tasks[1]->execute();
+
+        tasks[0]->state = TaskState::RUNNING;
+        tasks[1]->state = TaskState::RUNNING;
+
+        if (isDone1) {
+          freeTask(0);
+          sortTask();
+        }
+        if (isDone2) {
+          freeTask(1);
+          sortTask();
+        }
+      } else if (i == 0 && count >= 4) {
+        isDone1 = tasks[0]->execute();
+
+        tasks[0]->state = TaskState::RUNNING;
+
+        if (isDone1) {
+          freeTask(0);
+          sortTask();
+        }
+      } else {
+        bool isDone = tasks[i]->execute();
+        if (isDone) {
+          tasks[i]->state = TaskState::DONE;
+          freeTask(i);
+          i--;
+          sortTask();
+        }
       }
     }
   }
