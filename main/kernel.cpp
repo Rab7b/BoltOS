@@ -36,6 +36,7 @@ void Kernel::freeTask(uint8_t indexToFree) {
 
   if (sleepCount > 0 && count < 4) {
     Task* nextTask = sleeping[0];
+    nextTask->state = TaskState::READY;
     for (uint8_t i = 0; i < sleepCount - 1; i++) {
       sleeping[i] = sleeping[i + 1];
     }

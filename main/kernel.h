@@ -74,9 +74,11 @@ public:
     if (t == nullptr) return;
 
     if (count < 4) {
+      t->state = TaskState::READY;
       tasks[count] = t;
       count++;
     } else if (sleepCount < 12) {
+      t->state = TaskState::PAUSED;
       sleeping[sleepCount] = t;
       sleepCount++;
     }

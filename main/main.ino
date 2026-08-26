@@ -10,6 +10,22 @@
 #define OLED_RESET -1
 #define SCREEN_ADDRESS 0x3C
 
+struct bullet {
+  int x, y;
+  bool active; 
+  void go() {
+    y -= 2;   
+  }
+};
+
+struct enemy {
+  int x, y;
+  bool active;
+  void go() {
+    y += 1;
+  }
+};
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 CPU myCpu;
@@ -18,7 +34,8 @@ Kernel osKernel(myCpu);
 enum class SystemState {
   DESKTOP,
   TASK_MANAGER,
-  SETTINGS
+  SETTINGS,
+  GAME
 };
 
 SystemState currentScreen = SystemState::DESKTOP;
@@ -31,16 +48,30 @@ const uint8_t JOY_X = A1;
 const uint8_t JOY_Y = A2;
 const uint8_t JOY_SW = 2;
 
-const int icon1X = 20;
+const int icon1X = 10;
 const int icon1Y = 24;
 const int iconSize = 10; 
 
-const int icon2X = 80;
+const int icon2X = 50;
 const int icon2Y = 24;
 
+const int icon3X = 90;
+const int icon3Y = 24;
+
+bool lastButtonState = HIGH;
+unsigned long lastEnemySpawnTime = 0; 
+int score = 0;             
+
+const byte MAX_BULLETS = 10; 
+bullet bullets[MAX_BULLETS];
+
+const byte MAX_ENEMIES = 6; 
+enemy bots[MAX_ENEMIES];
+
 void drawDesktop();
-void drawTaskManager();
-void drawSettings();
+bool drawTaskManager();
+bool drawSettings();
+bool drawGame();
 
 bool sampleTask() {
   static unsigned long randomDuration{ 0 };
@@ -68,6 +99,10 @@ bool settingsApp() {
   return currentScreen != SystemState::SETTINGS;
 }
 
+bool gameApp() {
+  return currentScreen != SystemState::GAME;
+}
+
 void setup() {
   Serial.begin(115200);
   randomSeed(analogRead(A0));
@@ -89,6 +124,13 @@ void setup() {
   delay(1200);
 
   display.setTextSize(1);
+
+  for(byte i = 0; i < MAX_BULLETS; i++) {
+    bullets[i].active = false;
+  }
+  for(byte i = 0; i < MAX_ENEMIES; i++) {
+    bots[i].active = false;
+  }
 }
 
 void loop() {
@@ -99,15 +141,17 @@ void loop() {
   int joyX = analogRead(JOY_X); 
   int joyY = analogRead(JOY_Y); 
 
-  if (joyX < 400) cursorX -= cursorSpeed;
-  if (joyX > 600) cursorX += cursorSpeed;
-  if (joyY < 400) cursorY -= cursorSpeed;
-  if (joyY > 600) cursorY += cursorSpeed;
+  if (currentScreen == SystemState::DESKTOP) {
+    if (joyX < 400) cursorX -= cursorSpeed;
+    if (joyX > 600) cursorX += cursorSpeed;
+    if (joyY < 400) cursorY -= cursorSpeed;
+    if (joyY > 600) cursorY += cursorSpeed;
 
-  if (cursorX < 0) cursorX = 0;
-  if (cursorX > 124) cursorX = 124;
-  if (cursorY < 12) cursorY = 12;
-  if (cursorY > 60) cursorY = 60;
+    if (cursorX < 0) cursorX = 0;
+    if (cursorX > 124) cursorX = 124;
+    if (cursorY < 12) cursorY = 12;
+    if (cursorY > 60) cursorY = 60;
+  }
 
   switch (currentScreen) {
     case SystemState::DESKTOP:
@@ -118,6 +162,9 @@ void loop() {
       break;
     case SystemState::SETTINGS:
       drawSettings();
+      break;
+    case SystemState::GAME:
+      drawGame();
       break;
   }
 
@@ -131,21 +178,16 @@ void drawDesktop() {
   display.drawFastHLine(0, 10, 128, SSD1306_WHITE);
 
   display.drawRect(icon1X, icon1Y, iconSize, iconSize, SSD1306_WHITE);
-  display.drawFastHLine(icon1X + 2, icon1Y + 3, 6, SSD1306_WHITE);
-  display.drawFastHLine(icon1X + 2, icon1Y + 5, 6, SSD1306_WHITE);
-  display.drawFastHLine(icon1X + 2, icon1Y + 7, 6, SSD1306_WHITE);
-
   display.setCursor(icon1X - 6, icon1Y + 12);
   display.print(F("Tasks"));
 
   display.drawRect(icon2X, icon2Y, iconSize, iconSize, SSD1306_WHITE);
-  display.drawPixel(icon2X + 5, icon2Y + 3, SSD1306_WHITE);
-  display.drawPixel(icon2X + 5, icon2Y + 6, SSD1306_WHITE);
-  display.drawPixel(icon2X + 3, icon2Y + 4, SSD1306_WHITE);
-  display.drawPixel(icon2X + 7, icon2Y + 4, SSD1306_WHITE);
-
   display.setCursor(icon2X - 6, icon2Y + 12);
   display.print(F("Setup"));
+
+  display.drawRect(icon3X, icon3Y, iconSize, iconSize, SSD1306_WHITE);
+  display.setCursor(icon3X - 6, icon3Y + 12);
+  display.print(F("Game"));
 
   display.setCursor(cursorX, cursorY);
   display.print(F("^"));
@@ -163,10 +205,19 @@ void drawDesktop() {
       osKernel.addTask(new Task(3, TaskState::READY, settingsApp));
       delay(300);
     }
+    else if (cursorX >= icon3X - 4 && cursorX <= icon3X + iconSize + 4 &&
+             cursorY >= icon3Y - 4 && cursorY <= icon3Y + iconSize + 14) {
+      currentScreen = SystemState::GAME;
+      score = 0;
+      for(byte i = 0; i < MAX_BULLETS; i++) bullets[i].active = false;
+      for(byte i = 0; i < MAX_ENEMIES; i++) bots[i].active = false;
+      osKernel.addTask(new Task(7, TaskState::READY, gameApp));
+      delay(300);
+    }
   }
 }
 
-void drawTaskManager() {
+bool drawTaskManager() {
   display.setCursor(0, 0);
   display.print(F("=== TASK MANAGER ==="));
 
@@ -208,10 +259,12 @@ void drawTaskManager() {
   if (digitalRead(JOY_SW) == LOW) {
     currentScreen = SystemState::DESKTOP;
     delay(300);
+    return true;
   }
+  return false;
 }
 
-void drawSettings() {
+bool drawSettings() {
   display.setCursor(0, 0);
   display.print(F("==== SETTINGS ===="));
   display.drawFastHLine(0, 10, 128, SSD1306_WHITE);
@@ -244,5 +297,106 @@ void drawSettings() {
   if (digitalRead(JOY_SW) == LOW) {
     currentScreen = SystemState::DESKTOP;
     delay(300);
+    return true;
   }
+  return false;
+}
+
+bool drawGame() {
+  int rawX = analogRead(JOY_X);
+  int buttonState = digitalRead(JOY_SW);
+
+  int xCoord = map(rawX, 0, 1023, 0, 120); 
+  byte yCoord = 50;
+
+  if (millis() - lastEnemySpawnTime > 1500) {
+    for(byte i = 0; i < MAX_ENEMIES; i++) {
+      if(!bots[i].active) {
+        bots[i].x = random(0, SCREEN_WIDTH - 8); 
+        bots[i].y = 0;                           
+        bots[i].active = true;
+        lastEnemySpawnTime = millis();
+        break;
+      }
+    }
+  }
+
+  if (buttonState == LOW && lastButtonState == HIGH) {
+    for(byte i = 0; i < MAX_BULLETS; i++) {
+      if(!bullets[i].active) {
+        bullets[i].x = xCoord + 2; 
+        bullets[i].y = yCoord - 4; 
+        bullets[i].active = true;
+        break; 
+      }
+    }
+  }
+  lastButtonState = buttonState;
+
+  for(byte i = 0; i < MAX_BULLETS; i++) {
+    if(bullets[i].active) {
+      bullets[i].go();
+      
+      if(bullets[i].y < 0) {
+        bullets[i].active = false;
+      } else {
+        display.setCursor(bullets[i].x, bullets[i].y);
+        display.print("*"); 
+      }
+    }
+  }
+
+  for(byte i = 0; i < MAX_ENEMIES; i++) {
+    if(bots[i].active) {
+      bots[i].go();
+      if(bots[i].y > SCREEN_HEIGHT) {
+        bots[i].active = false;
+        score++;
+      } else {
+        for(byte j = 0; j < MAX_BULLETS; j++) {
+          if(bullets[j].active) {
+            if(abs(bullets[j].x - bots[i].x) < 6 && abs(bullets[j].y - bots[i].y) < 6) {
+              bots[i].active = false;    
+              bullets[j].active = false; 
+              score += 2;             
+            }
+          }
+        }
+        
+        if(abs(xCoord - bots[i].x) < 6 && abs(yCoord - bots[i].y) < 6) {
+          bots[i].active = false;    
+          score = 0;              
+        }
+  
+        if(bots[i].active) {
+          display.setCursor(bots[i].x, bots[i].y);
+          display.print("#"); 
+        }
+      }
+    }
+  }
+
+  display.setCursor(xCoord, yCoord);
+  display.print("^"); 
+  
+  display.setCursor(0, 0);
+  display.print(F("Score: "));
+  display.print(score);
+
+  display.setCursor(70, 0);
+  display.print(F("[Hold SW]"));
+
+  static unsigned long pressStartTime = 0;
+  if (buttonState == LOW) {
+    if (pressStartTime == 0) pressStartTime = millis();
+    else if (millis() - pressStartTime > 850) {
+      currentScreen = SystemState::DESKTOP;
+      pressStartTime = 0;
+      delay(300);
+      return true;
+    }
+  } else {
+    pressStartTime = 0;
+  }
+  return false;
 }
