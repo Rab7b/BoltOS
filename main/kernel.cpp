@@ -1,6 +1,9 @@
 #include "kernel.h"
 
+#include "kernel.h"
+
 void Kernel::run() {
+
   sortTask();
 
   for (uint8_t i = 0; i < count; i++) {
@@ -15,84 +18,152 @@ void Kernel::run() {
 
       if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr && tasks[2] != nullptr && tasks[3] != nullptr) {
 
-        isDone1 = tasks[0]->execute();
-        isDone2 = tasks[1]->execute();
-        isDone3 = tasks[2]->execute();
-        isDone4 = tasks[3]->execute();
+        Task* t0 = tasks[0];
+        Task* t1 = tasks[1];
+        Task* t2 = tasks[2];
+        Task* t3 = tasks[3];
 
-        tasks[0]->state = TaskState::RUNNING;
-        tasks[1]->state = TaskState::RUNNING;
-        tasks[2]->state = TaskState::RUNNING;
-        tasks[3]->state = TaskState::RUNNING;
+        isDone1 = t0->execute();
+        isDone2 = t1->execute();
+        isDone3 = t2->execute();
+        isDone4 = t3->execute();
+
+        t0->state = TaskState::RUNNING;
+        t1->state = TaskState::RUNNING;
+        t2->state = TaskState::RUNNING;
+        t3->state = TaskState::RUNNING;
 
         if (isDone1) {
-          freeTask(0);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t0) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone2) {
-          freeTask(1);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t1) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone3) {
-          freeTask(2);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t2) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone4) {
-          freeTask(3);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t3) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
-      } else if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr && tasks[2] != nullptr) {
-        isDone1 = tasks[0]->execute();
-        isDone2 = tasks[1]->execute();
-        isDone3 = tasks[2]->execute();
 
-        tasks[0]->state = TaskState::RUNNING;
-        tasks[1]->state = TaskState::RUNNING;
-        tasks[2]->state = TaskState::RUNNING;
+      } else if (i == 0 && count >= 3 && tasks[0] != nullptr && tasks[1] != nullptr && tasks[2] != nullptr) {  
+        Task* t0 = tasks[0];
+        Task* t1 = tasks[1];
+        Task* t2 = tasks[2];
+
+        isDone1 = t0->execute();
+        isDone2 = t1->execute();
+        isDone3 = t2->execute();
+
+        t0->state = TaskState::RUNNING;
+        t1->state = TaskState::RUNNING;
+        t2->state = TaskState::RUNNING;
 
         if (isDone1) {
-          freeTask(0);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t0) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone2) {
-          freeTask(1);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t1) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone3) {
-          freeTask(2);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t2) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
-      } else if (i == 0 && count >= 4 && tasks[0] != nullptr && tasks[1] != nullptr) {
-        isDone1 = tasks[0]->execute();
-        isDone2 = tasks[1]->execute();
 
-        tasks[0]->state = TaskState::RUNNING;
-        tasks[1]->state = TaskState::RUNNING;
+      } else if (i == 0 && count >= 2 && tasks[0] != nullptr && tasks[1] != nullptr) {  
+        Task* t0 = tasks[0];
+        Task* t1 = tasks[1];
+
+        isDone1 = t0->execute();
+        isDone2 = t1->execute();
+
+        t0->state = TaskState::RUNNING;
+        t1->state = TaskState::RUNNING;
 
         if (isDone1) {
-          freeTask(0);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t0) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
         if (isDone2) {
-          freeTask(1);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t1) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
-      } else if (i == 0 && count >= 4) {
-        isDone1 = tasks[0]->execute();
 
-        tasks[0]->state = TaskState::RUNNING;
+      } else if (i == 0 && count >= 1 && tasks[0] != nullptr) {  
+        Task* t0 = tasks[0];
+        isDone1 = t0->execute();
+        t0->state = TaskState::RUNNING;
 
         if (isDone1) {
-          freeTask(0);
+          for (uint8_t k = 0; k < count; k++) {
+            if (tasks[k] == t0) {
+              freeTask(k);
+              break;
+            }
+          }
           sortTask();
         }
+
       } else {
-        bool isDone = tasks[i]->execute();
-        if (isDone) {
-          tasks[i]->state = TaskState::DONE;
-          freeTask(i);
-          i--;
-          sortTask();
+        if (tasks[i] != nullptr) {
+          bool isDone = tasks[i]->execute();
+          if (isDone) {
+            tasks[i]->state = TaskState::DONE;
+            freeTask(i);
+            i--;
+            sortTask();
+          }
         }
       }
     }
@@ -112,18 +183,19 @@ void Kernel::freeTask(uint8_t indexToFree) {
     tasks[i] = tasks[i + 1];
   }
   tasks[count - 1] = nullptr;
-
   count--;
-  index = count;
 
   if (sleepCount > 0 && count < 4) {
     Task* nextTask = sleeping[0];
     nextTask->state = TaskState::READY;
+
     for (uint8_t i = 0; i < sleepCount - 1; i++) {
       sleeping[i] = sleeping[i + 1];
     }
     sleeping[sleepCount - 1] = nullptr;
     sleepCount--;
-    addTask(nextTask);
+
+    tasks[count] = nextTask;
+    count++;
   }
 }  //kernel.cpp

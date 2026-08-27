@@ -13,10 +13,8 @@ private:
   uint8_t count;
   uint8_t sleepCount;
   CPU* core;
-  uint8_t index;
 
   void sortAllTasks() {
-
     Task* allTasks[16];
     uint8_t total = 0;
 
@@ -47,22 +45,22 @@ private:
     for (uint8_t i = 0; i < total; i++) {
       if (i < 4) {
         tasks[count] = allTasks[i];
-        tasks[count]->state = TaskState::READY;
+        if (tasks[count]->state == TaskState::PAUSED) {
+          tasks[count]->state = TaskState::READY;
+        }
         count++;
       } else {
         if (sleepCount < 12) {
           sleeping[sleepCount] = allTasks[i];
-          sleeping[sleepCount]->state = TaskState::READY;
+          sleeping[sleepCount]->state = TaskState::PAUSED;
           sleepCount++;
         }
       }
     }
-    index = count;
   }
 
 public:
   Kernel(CPU& cpuCore) {
-    index = 0;
     count = 0;
     sleepCount = 0;
     core = &cpuCore;
@@ -82,12 +80,10 @@ public:
       sleeping[sleepCount] = t;
       sleepCount++;
     }
-
     sortAllTasks();
   }
 
   void reset() {
-    index = 0;
     count = 0;
     sleepCount = 0;
     for (uint8_t i = 0; i < 4; i++) tasks[i] = nullptr;
@@ -101,12 +97,8 @@ public:
   void run();
   void freeTask(uint8_t indexToFree);
 
-  uint8_t getCount() {
-    return count;
-  }
-  uint8_t getSleepCount() {
-    return sleepCount;
-  }
+  uint8_t getCount() { return count; }
+  uint8_t getSleepCount() { return sleepCount; }
 
   Task& getTask(uint8_t i) {
     static Task emptyTask;
@@ -117,4 +109,4 @@ public:
   }
 };
 
-#endif  // kernel.h
+#endif // kernel.h
